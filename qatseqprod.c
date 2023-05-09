@@ -178,7 +178,7 @@ QZSTD_ProcessData_T gProcess = {
 
 extern CpaStatus icp_adf_get_numDevices(Cpa32U *);
 
-int debugLevel = DEBUGLEVEL;
+int debugLevel = 0; //DEBUGLEVEL
 
 #define QZSTD_DEBUG_PRINT(...) fprintf(stderr, __VA_ARGS__)
 
