@@ -63,7 +63,7 @@ static void ZSTD_decompressStream_wrapper(decompressStream2_result* result, ZSTD
 	result->bytes_written = outBuffer.pos;
 }
 
-static void enable_QAT_ZSTD(ZSTD_CCtx* ctx) {
+static void* enable_QAT_ZSTD(ZSTD_CCtx* ctx) {
     QZSTD_startQatDevice();
     // Create sequence producer state for QAT sequence producer
     void *sequenceProducerState = QZSTD_createSeqProdState();
@@ -75,6 +75,7 @@ static void enable_QAT_ZSTD(ZSTD_CCtx* ctx) {
     );
     // Enable sequence producer fallback
     ZSTD_CCtx_setParameter(ctx, ZSTD_c_enableSeqProducerFallback, 1);
+	return sequenceProducerState;
 }
 */
 import "C"
@@ -89,12 +90,14 @@ import (
 
 var errShortRead = errors.New("short read")
 var errReaderClosed = errors.New("Reader is closed")
+var ErrNoParallelSupport = errors.New("No parallel support")
 
 // Writer is an io.WriteCloser that zstd-compresses its input.
 type Writer struct {
 	CompressionLevel int
 
 	ctx              *C.ZSTD_CCtx
+	seqProd          unsafe.Pointer
 	dict             []byte
 	srcBuffer        []byte
 	dstBuffer        []byte
@@ -144,8 +147,8 @@ func NewWriterLevelDict(w io.Writer, level int, dict []byte) *Writer {
 			C.size_t(len(dict)),
 		)))
 	}
-	
-	C.enable_QAT_ZSTD(ctx)
+
+	seqProd := C.enable_QAT_ZSTD(ctx)
 	if err == nil {
 		// Only set level if the ctx is not in error already
 		err = getError(int(C.ZSTD_CCtx_setParameter(ctx, C.ZSTD_c_compressionLevel, C.int(level))))
@@ -154,6 +157,7 @@ func NewWriterLevelDict(w io.Writer, level int, dict []byte) *Writer {
 	return &Writer{
 		CompressionLevel: level,
 		ctx:              ctx,
+		seqProd:          seqProd,
 		dict:             dict,
 		srcBuffer:        make([]byte, 0),
 		dstBuffer:        make([]byte, CompressBound(1024)),
@@ -305,6 +309,7 @@ func (w *Writer) Close() error {
 		written := int(w.resultBuffer.bytes_written)
 		_, err := w.underlyingWriter.Write(w.dstBuffer[:written])
 		if err != nil {
+			C.QZSTD_freeSeqProdState(w.seqProd)
 			C.ZSTD_freeCStream(w.ctx)
 			return err
 		}
@@ -316,8 +321,30 @@ func (w *Writer) Close() error {
 			}
 		}
 	}
-
+	C.QZSTD_freeSeqProdState(w.seqProd)
 	return getError(int(C.ZSTD_freeCStream(w.ctx)))
+}
+
+// Set the number of workers to run the compression in parallel using multiple threads
+// If > 1, the Write() call will become asynchronous. This means data will be buffered until processed.
+// If you call Write() too fast, you might incur a memory buffer up to as large as your input.
+// Consider calling Flush() periodically if you need to compress a very large file that would not fit all in memory.
+// By default only one worker is used.
+func (w *Writer) SetNbWorkers(n int) error {
+	if w.firstError != nil {
+		return w.firstError
+	}
+	if err := getError(int(C.ZSTD_CCtx_setParameter(w.ctx, C.ZSTD_c_nbWorkers, C.int(n)))); err != nil {
+		w.firstError = err
+		// First error case, a shared libary is used, and the library was compiled without parallel support
+		if err.Error() == "Unsupported parameter" {
+			return ErrNoParallelSupport
+		} else {
+			// This could happen if a very large number is passed in, and possibly zstd refuse to create as many threads, or the OS fails to do so
+			return err
+		}
+	}
+	return nil
 }
 
 // cSize is the recommended size of reader.compressionBuffer. This func and
