@@ -48,7 +48,7 @@ extern "C" {
  * typically through compiler command line.
  * Value must be a number. */
 #ifndef DEBUGLEVEL
-#  define DEBUGLEVEL 0
+#  define DEBUGLEVEL 5
 #endif
 
 
