@@ -3147,7 +3147,7 @@ typedef enum { ZSTDbss_compress, ZSTDbss_noCompress } ZSTD_buildSeqStore_e;
 static size_t ZSTD_buildSeqStore(ZSTD_CCtx* zc, const void* src, size_t srcSize)
 {
     ZSTD_matchState_t* const ms = &zc->blockState.matchState;
-    printf("maya: ZSTD_buildSeqStore (srcSize=%zu)\n", srcSize);
+//    printf("maya: ZSTD_buildSeqStore (srcSize=%zu)\n", srcSize);
     DEBUGLOG(5, "ZSTD_buildSeqStore (srcSize=%zu)", srcSize);
     assert(srcSize <= ZSTD_BLOCKSIZE_MAX);
     /* Assert that we have correctly flushed the ctx params into the ms's copy */
@@ -3272,7 +3272,7 @@ static size_t ZSTD_buildSeqStore(ZSTD_CCtx* zc, const void* src, size_t srcSize)
                         "Failed to copy external sequences to seqStore!"
                     );
                     ms->ldmSeqStore = NULL;
-		    printf("maya: Copied %lu sequences from external sequence producer to internal seqStore.\n", (unsigned long)nbExternalSeqs);
+//		    printf("maya: Copied %lu sequences from external sequence producer to internal seqStore.\n", (unsigned long)nbExternalSeqs);
                     DEBUGLOG(5, "Copied %lu sequences from external sequence producer to internal seqStore.", (unsigned long)nbExternalSeqs);
                     return ZSTDbss_compress;
                 }
@@ -3287,8 +3287,7 @@ static size_t ZSTD_buildSeqStore(ZSTD_CCtx* zc, const void* src, size_t srcSize)
                                                                                             zc->appliedParams.useRowMatchFinder,
                                                                                             dictMode);
                     ms->ldmSeqStore = NULL;
-		    printf("maya: External sequence producer returned error code %lu. Falling back to internal parser.\n",
-                        (unsigned long)nbExternalSeqs);
+//		    printf("maya: External sequence producer returned error code %lu. Falling back to internal parser.\n",                       (unsigned long)nbExternalSeqs);
                     DEBUGLOG(
                         5,
                         "External sequence producer returned error code %lu. Falling back to internal parser.",
@@ -6407,7 +6406,7 @@ ZSTD_copySequencesToSeqStoreExplicitBlockDelim(ZSTD_CCtx* cctx,
     const BYTE* const iend = ip + blockSize;
     repcodes_t updatedRepcodes;
     U32 dictSize;
-    printf ("maya: ZSTD_copySequencesToSeqStoreExplicitBlockDelim (blockSize = %zu)\n", blockSize); 
+//printf ("maya: ZSTD_copySequencesToSeqStoreExplicitBlockDelim (blockSize = %zu)\n", blockSize); 
     DEBUGLOG(5, "ZSTD_copySequencesToSeqStoreExplicitBlockDelim (blockSize = %zu)", blockSize);
 
     if (cctx->cdict) {
