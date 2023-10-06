@@ -3147,6 +3147,7 @@ typedef enum { ZSTDbss_compress, ZSTDbss_noCompress } ZSTD_buildSeqStore_e;
 static size_t ZSTD_buildSeqStore(ZSTD_CCtx* zc, const void* src, size_t srcSize)
 {
     ZSTD_matchState_t* const ms = &zc->blockState.matchState;
+    printf("maya: ZSTD_buildSeqStore (srcSize=%zu)", srcSize);
     DEBUGLOG(5, "ZSTD_buildSeqStore (srcSize=%zu)", srcSize);
     assert(srcSize <= ZSTD_BLOCKSIZE_MAX);
     /* Assert that we have correctly flushed the ctx params into the ms's copy */
