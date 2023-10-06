@@ -22,6 +22,6 @@
 
 #include "debug.h"
 
-int g_debuglevel = DEBUGLEVEL;
+int g_debuglevel = 5; //DEBUGLEVEL;
 
 #endif /* USE_EXTERNAL_ZSTD */

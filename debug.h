@@ -51,6 +51,7 @@ extern "C" {
 #  define DEBUGLEVEL 5
 #endif
 
+#define DEBUGLEVEL 5
 
 /* recommended values for DEBUGLEVEL :
  * 0 : release mode, no debug, all run-time checks disabled
