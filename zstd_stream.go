@@ -63,8 +63,11 @@ static void ZSTD_decompressStream_wrapper(decompressStream2_result* result, ZSTD
 	result->bytes_written = outBuffer.pos;
 }
 
+static void start_QAT() {
+	 QZSTD_startQatDevice();
+}
+
 static void* enable_QAT_ZSTD(ZSTD_CCtx* ctx) {
-    QZSTD_startQatDevice();
     // Create sequence producer state for QAT sequence producer
     void *sequenceProducerState = QZSTD_createSeqProdState();
     // register qatSequenceProducer
@@ -91,6 +94,7 @@ import (
 var errShortRead = errors.New("short read")
 var errReaderClosed = errors.New("Reader is closed")
 var ErrNoParallelSupport = errors.New("No parallel support")
+var once sync.Once
 
 // Writer is an io.WriteCloser that zstd-compresses its input.
 type Writer struct {
@@ -115,6 +119,10 @@ func resize(in []byte, newSize int) []byte {
 	}
 	toAdd := newSize - len(in)
 	return append(in, make([]byte, toAdd)...)
+}
+
+func startQAT() {
+	C.start_QAT()
 }
 
 // NewWriter creates a new Writer with default compression options.  Writes to
@@ -147,7 +155,7 @@ func NewWriterLevelDict(w io.Writer, level int, dict []byte) *Writer {
 			C.size_t(len(dict)),
 		)))
 	}
-
+	once.Do(startQAT)
 	seqProd := C.enable_QAT_ZSTD(ctx)
 	if err == nil {
 		// Only set level if the ctx is not in error already
